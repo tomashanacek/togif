@@ -6,13 +6,10 @@ temp = require('temp').track()
 
 togif = (input, output, options, callback) ->
   rate = options.rate or 10
-  delay = options.delay or 'auto'
   ffmpeg = options.ffmpeg or 'ffmpeg'
   convert = options.convert or 'convert'
 
-  if delay is 'auto'
-    delay = 1000 / rate / 100 | 0
-
+  delay = 100 / rate / 1
   input = escape([input])
   output = escape([output])
 
