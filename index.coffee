@@ -7,32 +7,34 @@ temp = require('temp').track()
 togif = (input, output, options, callback) ->
   rate = options.rate or 10
   ffmpeg = options.ffmpeg or 'ffmpeg'
-  convert = options.convert or 'convert'
 
-  delay = 100 / rate / 1
   input = escape([input])
   output = escape([output])
 
   temp.mkdir {}, (err, tempDir) ->
     return callback(err) if err
 
-    tempPath = path.join(tempDir, '/%04d.png')
+    palettePath = path.join(tempDir, '/palette.png')
+
+    filters = "fps=#{rate}"
+
+    if options.width
+      filters += ",scale=#{options.width}:-1:flags=lanczos"
 
     cmd = [ffmpeg]
     cmd.push('-i', input)
-    cmd.push('-r', String(rate))
-    cmd.push(tempPath)
+    cmd.push('-vf', '"' + filters + ',palettegen"')
+    cmd.push('-y', palettePath)
     cmd = cmd.join(' ')
 
     exec cmd, (err) ->
       return callback(err) if err
 
-      cmd = [convert]
-      cmd.push('+dither')
-      cmd.push('-layers', 'Optimize')
-      cmd.push('-delay', String(delay))
-      cmd.push(path.join(tempDir, '/*.png'))
-      cmd.push(output)
+      cmd = [ffmpeg]
+      cmd.push('-i', input)
+      cmd.push('-i', palettePath)
+      cmd.push('-lavfi', '"' + filters + ' [x]; [x][1:v] paletteuse"')
+      cmd.push('-y', output)
       cmd = cmd.join(' ')
 
       exec(cmd, callback)
